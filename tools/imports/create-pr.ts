@@ -82,6 +82,8 @@ const response = await fetch(githubAPIUrl, {
 });
 
 const prData = await response.json();
-if (!response.ok)
-	throw new Error(`Could not create PR ${prData}`);
+if (!response.ok) {
+	console.error(prData);
+	throw new Error(`Could not create PR. Is there already a PR?`);
+}
 console.log(`Pull request created: ${prData.html_url}`);
