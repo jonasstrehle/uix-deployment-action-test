@@ -5,7 +5,7 @@ import * as path from "jsr:@std/path";
 const data = await createTypeImports("uix", "./src/");
 const regex = /^\/\* \<module\>[*\S\s]*\<\/module\>.*$/gm;
 
-console.log(Deno.args.at(0))
+console.log(Deno.args)
 
 /**
  * Replacing the following references (without the _):
