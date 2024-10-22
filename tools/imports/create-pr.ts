@@ -2,12 +2,14 @@
 import { walk } from "jsr:@std/fs/walk";
 import * as path from "jsr:@std/path";
 
+const data = await createTypeImports("uix", "./src/");
+const regex = /^\/\* \<module\>[*\S\s]*\<\/module\>.*$/gm;
+
 /**
  * Replacing the following references (without the _):
  * /_* <module> *_/
  * /_* </module> *_/
  */
-
 export async function createTypeImports(specifier: string, base = '.') {
 	let imports = `// deno-lint-ignore-file no-unused-vars\n// This part is auto generated to allow Deno to resolve the ${specifier}-modules`;
 	const originalPath = path.resolve(base);
@@ -21,13 +23,9 @@ export async function createTypeImports(specifier: string, base = '.') {
 	return imports;
 }
 
-const data = await createTypeImports("uix", "./src/");
-const regex = /^\/\* \<module\>[*\S\s]*\<\/module\>.*$/gm;
-
 async function replaceImports() {
-	for await (const dirEntry of walk(".", { exts: ["ts"]})) {
+	for await (const dirEntry of walk('.', { exts: ["ts"]})) {
 		const path = dirEntry.path;
-		console.log(path)
 		const content = Deno.readTextFileSync(path);
 		if (content.match(regex)) {
 			Deno.writeTextFileSync(path, content.replace(regex, `/* <module> */\n${data}\n/* </module> */`));
@@ -38,6 +36,15 @@ async function replaceImports() {
 	return false;
 }
 
+function runGitHubCommand(...args: string[]) {
+	return new Deno.Command('git', { args: args, cwd: "." }).outputSync().success;
+}
+const branchName = "dependency-bump";
+
 if (await replaceImports()) {
-	console.info("Replaced modules")
+	console.info("Replaced modules");
+	runGitHubCommand("checkout", "-b", branchName);
+	runGitHubCommand("add", ".");
+	runGitHubCommand("commit", "-m", "Updating module imports");
+	runGitHubCommand("push", "origin", branchName);
 } else console.error("Could not find module reference. Skipping");
